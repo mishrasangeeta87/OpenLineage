@@ -15,7 +15,7 @@ import io.openlineage.client.OpenLineage;
 import io.openlineage.client.OpenLineage.OutputDataset;
 import io.openlineage.spark.agent.Versions;
 import io.openlineage.spark.api.OpenLineageContext;
-import io.openlineage.spark3.agent.utils.DeleteUpdateCommandUtils;
+import io.openlineage.spark3.agent.utils.DeleteCommandUtils;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -29,14 +29,13 @@ import org.mockito.MockedStatic;
 import scala.PartialFunction;
 import scala.runtime.AbstractPartialFunction;
 
-class DeleteUpdateCommandOutputDatasetBuilderTest {
+class DeleteCommandOutputDatasetBuilderTest {
 
   private static final OpenLineage OPEN_LINEAGE =
       new OpenLineage(Versions.OPEN_LINEAGE_PRODUCER_URI);
 
   OpenLineageContext context = mock(OpenLineageContext.class);
-  DeleteUpdateCommandOutputDatasetBuilder builder =
-      new DeleteUpdateCommandOutputDatasetBuilder(context);
+  DeleteCommandOutputDatasetBuilder builder = new DeleteCommandOutputDatasetBuilder(context);
   SparkListenerEvent event = new SparkListenerSQLExecutionEnd(1L, 1L);
 
   @Test
@@ -51,10 +50,9 @@ class DeleteUpdateCommandOutputDatasetBuilderTest {
     givenTargetVisitorReturning("delete_table", "unity-catalog");
     LogicalPlan command = mock(LogicalPlan.class);
 
-    try (MockedStatic<DeleteUpdateCommandUtils> utils =
-        mockStatic(DeleteUpdateCommandUtils.class)) {
+    try (MockedStatic<DeleteCommandUtils> utils = mockStatic(DeleteCommandUtils.class)) {
       utils
-          .when(() -> DeleteUpdateCommandUtils.target(command))
+          .when(() -> DeleteCommandUtils.target(command))
           .thenReturn(Optional.of(new OneRowRelation()));
 
       List<OutputDataset> outputs = builder.apply(event, command);
@@ -70,9 +68,8 @@ class DeleteUpdateCommandOutputDatasetBuilderTest {
   void testApplyWhenTargetIsMissing() {
     LogicalPlan command = mock(LogicalPlan.class);
 
-    try (MockedStatic<DeleteUpdateCommandUtils> utils =
-        mockStatic(DeleteUpdateCommandUtils.class)) {
-      utils.when(() -> DeleteUpdateCommandUtils.target(command)).thenReturn(Optional.empty());
+    try (MockedStatic<DeleteCommandUtils> utils = mockStatic(DeleteCommandUtils.class)) {
+      utils.when(() -> DeleteCommandUtils.target(command)).thenReturn(Optional.empty());
 
       assertThat(builder.apply(event, command)).isEmpty();
     }
